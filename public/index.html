@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+  <head>
+   
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+   <!-- Setting the Favicon -->
+   <link rel="shortcut icon" type="png" href="ReflectionIcon.png">
+  <!-- import jquery -->
+   <script type="text/javascript" src="jquery-3.3.1.min.js"></script>
+   <!-- import jquery -->
+   <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+   <!-- link to app.js -->
+   <script src="app.js"></script>
+
+  </head>
+
+
+
+
+<body>
+    <div class="container">
+        <!-- View chat messages here here -->
+        <div class="sub-container chat-feed">
+            <div class="chat-box" id="chat-box-msgs"></div>
+        </div>
+
+        <!-- Enter chat messages here -->
+        <div class="sub-container chat-input">
+            <input type="text" class="chat-input-name" id="name-input" placeholder="N" />
+            <input type="text" class="chat-input-msg" id="msg-input" placeholder="Message" />
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+
+    <div id="welcome">
+        <div id="box">
+            <div id="item1" class="FadeInFrame">Welcome to a world without you.</div>
+            <div id="item2" class="FadeInFrame">
+              <div>FEELING</div>
+              <p>Move  mouse to control the sphere.</p>
+            </div>
+            <div id="item3" class="FadeInFrame">
+              <div>THINKING</div>
+              <p>Your relationship to your surroundings.</p>
+            </div>
+            <div id="item4" class="FadeInFrame">
+              <div>SHARING</div>
+              <p>Your thoughts at this moment.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="next-btn">
+        next
+    </div>
+    <div class="introduce">
+      introduce
+    </div>
+    <audio controls id="audio" autoplay="autoplay">
+      <source src="audio/1.mp3" type="audio/mpeg">
+      Your browser does not support this audio format.
+    </audio>
+    <!-- introduction -->
+    <div class="intro-box">
+      This is a mirror image of the real world. In this world, everything is the same as in the real world, except that there is no projection of the viewer. Through observation in the real world and observation in the virtual world, the audience compares the two worlds, thus triggering reflection on themselves.
+Each of the different scenes gives people different experiences, and each theme carries a different ultimate purpose, but the starting point of this project is the same, which is to force the audience to think about their own relationship to the surroundings. There are many kinds of relationships, and it is easy for many people to overlook these small ties. The author wants to amplify such relationships, relying on this reflective sphere.
+      <span class="close-btn"></span>
+    </div>
+    <!-- Import files -->
+    <script src="three.min.js"></script>
+    <script src="OrbitControls.js"></script>
+  
+  
+    <!-- First create a scene and setup a perspective camera. -->
+    <script>
+      let scene, camera, renderer, sphereCamera;
+      let num = 0;
+      let srcUrl = 1;
+      let urlsList = [
+        [
+        'img/px.png', 'img/nx.png',
+        'img/py.png', 'img/ny.png',
+        'img/pz.png', 'img/nz.png'
+        ],
+        [
+        'img/px1.png', 'img/nx1.png',
+        'img/py1.png', 'img/ny1.png',
+        'img/pz1.png', 'img/nz1.png'
+        ],
+        [
+        'img/px2.png', 'img/nx2.png',
+        'img/py2.png', 'img/ny2.png',
+        'img/pz2.png', 'img/nz2.png'
+        ],
+        [
+        'img/px3.png', 'img/nx3.png',
+        'img/py3.png', 'img/ny3.png',
+        'img/pz3.png', 'img/nz3.png'
+        ],
+
+
+      ]
+      let urlsArr = [
+        'img/px.png', 'img/nx.png',
+        'img/py.png', 'img/ny.png',
+        'img/pz.png', 'img/nz.png'
+      ];
+      function init(urlsArr) {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight,1,5000);
+        camera.position.set(0,400,1000);
+        
+        // Use WebGLrenderer and also enable the anti-aliasing
+        renderer = new THREE.WebGLRenderer({antialias:true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Setup the OrbitControl
+        let controls = new THREE.OrbitControls(camera, renderer.domElement);
+        // Disable the zooming (zooming out will break the skybox)
+        controls.enableZoom = false;
+
+        // Get six images for each cube side.
+        // let urls = [
+        //   'px.png', 'nx.png',
+        //   'py.png', 'ny.png',
+        //   'pz.png', 'nz.png'
+        // ];
+        let urls = urlsArr;
+        // First, let’s create an array to keep the path to the image. 
+        let loader = new THREE.CubeTextureLoader();
+         // Then use CubeTextureLoader and set it as scene background.
+        scene.background = loader.load(urls);
+
+        // Now! Skybox done already!!!!!!!
+
+        // Code Below! Creating a sphere shape.
+        
+
+        // Now to create a reflection, we’ll use a CubeCamera to capture the scene from all directions. Then apply the captured image as texture of the object.
+        sphereCamera = new THREE.CubeCamera(1,1000,500);
+        sphereCamera.position.set(0,100,0);
+        scene.add(sphereCamera);
+
+        // For material. We’ll use a MeshBasicMaterial. 
+        let sphereMaterial = new THREE.MeshBasicMaterial({
+          envMap: sphereCamera.renderTarget
+        });
+        // Then create a SphereGeometry with 350 units radius. 
+        // The last 2 are numbers of segments. 
+        let sphereGeo = new THREE.SphereGeometry(350,50,50);
+        let sphere = new THREE.Mesh(sphereGeo,sphereMaterial);
+        //Creating sphere from geometry and material, placing at the center.
+        sphere.position.set(0,200,0);
+        scene.add(sphere);
+
+        
+      
+        render();
+        
+      }
+
+      // And finally in the render loop,
+      // we’ll need to update the camera using updatecubemap method.
+      function render() {
+        renderer.render(scene,camera);
+        sphereCamera.updateCubeMap(renderer,scene);
+        requestAnimationFrame(render);
+      }
+      init(urlsArr);
+    </script>
+  </body>
+  <script type="text/javascript">
+  $(document).ready(function(){
+
+
+    
+    $("canvas").addClass("canvas");
+    //opening animation
+    setTimeout(function(){
+      show1();
+    },2000);
+    function show1()
+    {
+      $('#item1').addClass("fadein");
+      $('#item1').removeClass("FadeInFrame");
+      setTimeout(function(){
+        hide1();
+      },3000);
+    }
+    function hide1()
+    {
+      $("#item1").addClass("fadeout");
+      $('#item2').addClass("fadein");
+      $('#item2').removeClass("FadeInFrame");
+      $('#item1').hide();
+      setTimeout(function(){
+        hide2();
+      },3000);
+    }
+    function hide2()
+    {
+      $("#item2").addClass("fadeout");
+      $('#item3').addClass("fadein");
+      $('#item3').removeClass("FadeInFrame");
+      $('#item2').hide();
+      setTimeout(function(){
+        hide3();
+      },3000);
+    }
+    function hide3()
+    {
+      $("#item3").addClass("fadeout");
+      $('#item4').addClass("fadein");
+      $('#item4').removeClass("FadeInFrame");
+      $('#item3').hide();
+      setTimeout(function(){
+        go();
+      },3000);
+    }
+    function go()
+    {
+      $('#welcome').hide();
+      //music
+      var music = document.getElementById("audio"); 
+      if (music.paused) { 
+          music.paused=false;
+          music.play(); 
+      } 
+    }
+
+
+    //switch the img
+    $('.next-btn').click(function(){
+
+      srcUrl = srcUrl + 1;
+      if(srcUrl == 3){
+        srcUrl = 1;
+      }
+
+      fullUrl = 'audio/'+ srcUrl + '.mp3';
+       $('#audio').attr('src',fullUrl);
+       var fry_audio=$('#fry_audio').get('0');
+
+      var music = document.getElementById("audio");//
+      if (music.paused) { // 
+          music.paused=false;
+          music.play(); //
+      } 
+
+
+      //remove the previous img
+      $('canvas').remove();
+      num = num + 1;
+      if(num == 4){
+        num = 0;
+      }
+      let urlsArr = urlsList[num];
+      function render() {
+        renderer.render(scene,camera);
+        sphereCamera.updateCubeMap(renderer,scene);
+        requestAnimationFrame(render);
+      }
+      init(urlsArr);
+    })
+
+
+
+    //introduction
+    $('.introduce').click(function(){
+      $(".intro-box").addClass("show");
+    })
+
+    //close
+    $('.close-btn').click(function(){
+      $(".intro-box").addClass("fadeout");
+      setTimeout(function(){
+          $(".intro-box").removeClass("show");
+          $(".intro-box").removeClass("fadeout");
+      },1500);
+    })
+  })
+</script>
+</html>
+
+
+
+
+
+
+
